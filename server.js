@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/auth');
+const searchRoutes = require('./routes/search'); // ✅ NEW: Import search route
 
 dotenv.config(); // Load .env variables
 
@@ -20,11 +21,10 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/jobboard', 
   console.error('❌ MongoDB connection error:', err.message);
 });
 
-// Use your auth routes under /auth
-app.use('/auth', authRoutes);
+// Routes
+app.use('/auth', authRoutes);         // Existing auth routes
+app.use('/jobs', searchRoutes);       // ✅ NEW: Search route under /jobs
 
-// Start the server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+
+
+module.exports = app; // ✅ Required for Supertest to work with Jest
