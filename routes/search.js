@@ -1,27 +1,37 @@
 const express = require('express');
 const router = express.Router();
+const Job = require('../models/Job');
 
-// Dummy jobs for testing
-const dummyJobs = [
-  { title: 'Software Developer', description: 'Looking for a React developer' },
-  { title: 'UX Designer', description: 'Design job' },
-  { title: 'Backend Developer', description: 'Node.js and MongoDB' }
-];
+// GET /jobs/search?keyword=developer&location=Remote&company=TechNova
+router.get('/search', async (req, res) => {
+  const { keyword, location, company } = req.query;
 
-// GET /jobs/search?keyword=developer
-router.get('/search', (req, res) => {
-  const keyword = req.query.keyword?.toLowerCase();
+  const query = {};
 
-  if (!keyword) {
-    return res.status(400).json({ error: 'Keyword is required' });
+  // Search by keyword in title or description
+  if (keyword) {
+    query.$or = [
+      { title: { $regex: keyword, $options: 'i' } },
+      { description: { $regex: keyword, $options: 'i' } }
+    ];
   }
 
-  const filteredJobs = dummyJobs.filter(job =>
-    job.title.toLowerCase().includes(keyword) ||
-    job.description.toLowerCase().includes(keyword)
-  );
+  // Optional: Filter by location
+  if (location) {
+    query.location = { $regex: location, $options: 'i' };
+  }
 
-  res.json({ jobs: filteredJobs });
+  // Optional: Filter by company
+  if (company) {
+    query.company = { $regex: company, $options: 'i' };
+  }
+
+  try {
+    const jobs = await Job.find(query);
+    res.json({ jobs });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 module.exports = router;
