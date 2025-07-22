@@ -1,6 +1,13 @@
-//Import User model and generate jwt
-import User from "../models/user.js";
+/*
+500 Internal Server Error
+201 Created
+400 Bad Request
+200 OK
+*/
+//Import bcrypt and generate jwt
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+
 
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
@@ -19,19 +26,30 @@ const generateToken = (user) => {
 //Register a new user
 
 export const registerUser = async (req, res) => {
+    //Access database
+    const db = req.db;
+    const users = db.collection('users');
     try {
         const { username, email, password, roleID } = req.body;
 
         //Check if user already exists
-        const existingUser = await User.findOne({ email });
+        const existingUser = await users.findOne({ email });
         if (existingUser) {
             //bad request
             return res.status(400).json({ message: "User already exists" });
         }
+        //Hash the password before saving
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
 
         //Create new user
-        const newUser = new User({ username, email, password, roleID });
-        await newUser.save();
+        const newUser = ({ username, 
+            email, 
+            password: hashedPassword, 
+            roleID 
+        });
+        users.insertOne(newUser);
+        
 
         //Generate token
         const token = generateToken(newUser);
@@ -39,7 +57,7 @@ export const registerUser = async (req, res) => {
         //201 for when api creates a resource
         res.status(201).json({ 
             message: "User registered successfully", token,
-        success: true,
+            success: true,
             user: {
                 id: newUser._id,
                 username: newUser.username,
@@ -58,18 +76,21 @@ export const registerUser = async (req, res) => {
 //Login user
 
 export const loginUser = async (req, res) => {
+    //Access database
+    const db = req.db;  
+    const users = db.collection('users');
     try {
         const { email, password } = req.body;
 
         //Find user by email and flag t/f
-        const user = await User.findOne({ email });
+        const user = await users.findOne({ email });
         if (!user) {
             //bad request
             return res.status(400).json({ success: false, message: "Invalid email or password" });
         }
 
         //Now compare user password and flag t/f
-        const isMatch = await user.comparePassword(password);
+        const isMatch = await bcrypt.compare(password,user.password);
         if (!isMatch) {
             //bad request
             return res.status(400).json({ success: false, message: "Invalid email or password" });

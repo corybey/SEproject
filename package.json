@@ -1,0 +1,28 @@
+{
+  "name": "express-essentials",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "cbey",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon --experimental-json-modules --exec babel-node index.js",
+    "debug": "cross-env DEBUG=express:* nodemon --experimental-json-modules --exec babel-node index.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.17.0",
+    "nodemon": "^3.1.10"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.28.0",
+    "@babel/core": "^7.28.0",
+    "@babel/node": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
+    "cross-env": "^7.0.3"
+  }
+}

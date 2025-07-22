@@ -1,33 +1,41 @@
 import express from "express";
-import { MongoClient } from "mongodb";
-//import authRouthes from "./routes/authRoutes.js";
-// Importing dotenv for environment variable management
 import dotenv from 'dotenv';
+import {connectToDB} from "./config/db.js";
+import authRoutes from "./routes/authRoutes.js";
+import jobRoutes from "./routes/jobRoutes.js";
+
+//Load environment variables
 
 dotenv.config();
 
-
 const app = express();
 const PORT = process.env.PORT || 3000;
-const url = process.env.MONGO_URI || "mongodb://localhost:27017";
-const dbName = process.env.DB_NAME || "JobBoardApp";
+
+//Paerse JSON
+app.use(express.json());
+//Use job routes
+app.use("/api", jobRoutes);
 
 // MongoDB connection
-//Mark parser and toplogy true to avoid deprecation warnings
-MongoClient.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(client => {
+connectToDB()
+    .then((db) => {       
         console.log("Connected to MongoDB");
 
-        //store database with appLocal 
-        const db = client.db(dbName);
-        app.locals.db = db;
-
-        app.get("/home", (req, res) => {
-            res.send("Welcome to the Job Board App");
-            console.log("Home route accessed");
+        //Add database to app requests
+        app.use((req, res, next) => {
+            req.db = db;
+            next();
         });
+
+        //Use auth routes
+        app.use("/", authRoutes);
+
+    
         // Start server
         app.listen(PORT, () => {
             console.log("Server is running on port", {PORT});
         });
     })
+    .catch((error) => {
+        console.error("Failed to connect to MongoDB:", error);
+    });
