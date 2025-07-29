@@ -13,8 +13,6 @@ const PORT = process.env.PORT || 3000;
 
 //Paerse JSON
 app.use(express.json());
-//Use job routes
-app.use("/api", jobRoutes);
 
 // MongoDB connection
 connectToDB()
@@ -29,6 +27,11 @@ connectToDB()
 
         //Use auth routes
         app.use("/", authRoutes);
+        //Use job routes
+        app.use("/api", jobRoutes);
+        //Use auth routes for user management
+        app.use("/api/auth", authRoutes);
+
 
     
         // Start server

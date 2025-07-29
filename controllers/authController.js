@@ -30,7 +30,7 @@ export const registerUser = async (req, res) => {
     const db = req.db;
     const users = db.collection('users');
     try {
-        const { username, email, password, roleID } = req.body;
+        const { username, email, password } = req.body;
 
         //Check if user already exists
         const existingUser = await users.findOne({ email });
@@ -45,24 +45,23 @@ export const registerUser = async (req, res) => {
         //Create new user
         const newUser = ({ username, 
             email, 
-            password: hashedPassword, 
-            roleID 
+            password: {password,hashedPassword} 
         });
         users.insertOne(newUser);
-        
 
         //Generate token
         const token = generateToken(newUser);
 
         //201 for when api creates a resource
         res.status(201).json({ 
-            message: "User registered successfully", token,
+            message: "User registered successfully", 
+            token,
             success: true,
             user: {
-                id: newUser._id,
+                id: newUser._id.toString(),
                 username: newUser.username,
                 email: newUser.email,
-                roleID: newUser.roleID
+                password: newUser.password
             }
         });
     } catch (error) {
@@ -104,10 +103,9 @@ export const loginUser = async (req, res) => {
             message: "Login successful",
             token,
             user: {
-                id: user._id,
+                id: user._id.toString(),
                 username: user.username,
                 email: user.email,
-                roleID: user.roleID
             }
         });
         //otherwise return error
@@ -117,3 +115,39 @@ export const loginUser = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error", error: error.message });
     }
 };
+
+
+
+//====================================================
+//Get all users
+export const getAllUsers = async (req, res) => {
+    const db = req.db;
+    const users = db.collection('users');
+
+    try {
+        // Only fetch _id and username
+        const userList = await users.find({}, {
+            projection: { username: 1 }
+        }).toArray();
+
+        // Convert _id to string and format response
+        const formatUsers = userList.map(user => ({
+            id: user._id.toString(),
+            username: user.username
+        }));
+
+        res.status(200).json({
+            success: true,
+            users: formatUsers
+        });
+
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Server error", 
+            error: error.message 
+        });
+    }
+};
+

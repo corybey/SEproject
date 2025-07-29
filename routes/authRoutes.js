@@ -5,11 +5,13 @@
 200 OK
 */
 import express from "express";
-import { loginUser, registerUser } from "../controllers/authController.js";
+import { loginUser, registerUser, getAllUsers } from "../controllers/authController.js";
+
 
 const router = express.Router();
 //Call controller functions directly
 //Create routes to register and login users
+//Functions not called directly
 router.post("/register", async (req, res) => {
     try {
         await registerUser(req, res);
@@ -28,6 +30,7 @@ router.post("/login", async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+
 
 //export
 export default router;

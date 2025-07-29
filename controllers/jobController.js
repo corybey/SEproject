@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 /*
 500 Internal Server Error
 201 Created
@@ -6,13 +7,13 @@
 */
 
 //======================================================
-import { ObjectId } from 'mongodb';
+
 //Create a new job listing
 export const createJob = async (req, res) => {
     const db = req.db;
     const jobs = db.collection('jobs');
     try {
-        const { title, description, jobType, location, postedBy, salary } = req.body
+        const { title, description, jobType, location, postedBy , salary } = req.body
 
         //Validate input
         if (!title || !description || !jobType || !location || !postedBy) {
@@ -22,7 +23,26 @@ export const createJob = async (req, res) => {
             });
         }
 
+        //Make objectid hex
+        const objectId = ObjectId.createFromHexString(postedBy);
+        //Load username to postedBy
+        const user = await db.collection('users').findOne({ _id: objectId });
+        if (!user) {
+            return res.status(404).json({       
+                success: false,
+                message: "User not found"   
+            });
+        }   
+        
+        //Check if postedBy is a valid ObjectId
+        if (!ObjectId.isValid(postedBy)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Invalid postedBy ID format" 
+            });
+        }
         //Create job object
+        console.log("Posted By ObjectId:", objectId);
         const newJob = {
             title,
             description,
@@ -31,9 +51,10 @@ export const createJob = async (req, res) => {
             location,
             //default pay to N/A if not provided
             salary: salary || "N/A",
-            postedBy: new ObjectId(postedBy), // Convert postedBy to ObjectId
+            postedBy: user.username , // Convert postedBy to ObjectId
             createdAt: new Date(),
         };
+        
 
         //Insert job into database
         const result = await jobs.insertOne(newJob);
@@ -57,7 +78,7 @@ export const createJob = async (req, res) => {
 //Gather all job listings
 export const getAllJobs = async (req, res) => {
     const db = req.db;
-    const jobs = db.collection('jobBoard');
+    const jobs = db.collection('jobs');
     try {
         //Fetch all jobs
         const jobList = await jobs.find({}).toArray();
@@ -81,6 +102,7 @@ export const getJobById = async (req, res) => {
     const db = req.db;
     const jobs = db.collection('jobs');
 
+
     try {
         const { id } = req.params;
 
@@ -91,10 +113,10 @@ export const getJobById = async (req, res) => {
                 message: "Invalid job ID" 
             });
         }
-
+        const jobId = ObjectId.createFromHexString(id);
         //Fetch job by ID using ID as PK
         const job = await jobs.findOne({ 
-            _id: new ObjectId(id) 
+            _id: jobId 
         });
         //Check if job exists
         if (!job) {
@@ -135,8 +157,9 @@ export const updateJob = async (req, res) => {
             });
         }
 
+        const jobId = ObjectId.createFromHexString(id);
         //Check if job exists
-        const existingJob = await jobs.findOne({ _id: new ObjectId(id) });
+        const existingJob = await jobs.findOne({ _id: jobId });
         if (!existingJob) {
             return res.status(404).json({ 
                 success: false, 
@@ -146,7 +169,7 @@ export const updateJob = async (req, res) => {
 
         //Update job object
         await jobs.updateOne(
-            { _id: new ObjectId(id) },
+            { _id: jobId },
             {
                 $set: {
                     title,
@@ -189,8 +212,9 @@ export const deleteJob = async (req, res) => {
             });
         }
 
+        const jobId = ObjectId.createFromHexString(id);
         //Check if job exists
-        const existingJob = await jobs.findOne({ _id: new ObjectId(id) });
+        const existingJob = await jobs.findOne({ _id: jobId });
         if (!existingJob) {
             return res.status(404).json({ 
                 success: false, 
@@ -199,7 +223,7 @@ export const deleteJob = async (req, res) => {
         }
 
         //Delete job
-        await jobs.deleteOne({ _id: new ObjectId(id) });
+        await jobs.deleteOne({ _id: jobId });
         res.status(200).json({
             success: true,
             message: "Job deleted successfully"
