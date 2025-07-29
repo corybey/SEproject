@@ -115,39 +115,3 @@ export const loginUser = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error", error: error.message });
     }
 };
-
-
-
-//====================================================
-//Get all users
-export const getAllUsers = async (req, res) => {
-    const db = req.db;
-    const users = db.collection('users');
-
-    try {
-        // Only fetch _id and username
-        const userList = await users.find({}, {
-            projection: { username: 1 }
-        }).toArray();
-
-        // Convert _id to string and format response
-        const formatUsers = userList.map(user => ({
-            id: user._id.toString(),
-            username: user.username
-        }));
-
-        res.status(200).json({
-            success: true,
-            users: formatUsers
-        });
-
-    } catch (error) {
-        console.error("Error fetching users:", error);
-        res.status(500).json({ 
-            success: false, 
-            message: "Server error", 
-            error: error.message 
-        });
-    }
-};
-

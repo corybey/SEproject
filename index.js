@@ -29,9 +29,7 @@ connectToDB()
         app.use("/", authRoutes);
         //Use job routes
         app.use("/api", jobRoutes);
-        //Use auth routes for user management
-        app.use("/api/auth", authRoutes);
-
+        
 
     
         // Start server
